@@ -187,12 +187,10 @@ namespace lime {
 
 					nextUpdate += framePeriod;
 
-					while (nextUpdate <= currentUpdate) {
-
-						nextUpdate += framePeriod;
-
+					if (framePeriod > 0.0) {
+						while (nextUpdate <= currentUpdate)
+							nextUpdate += framePeriod;
 					}
-
 					ApplicationEvent::Dispatch (&applicationEvent);
 					RenderEvent::Dispatch (&renderEvent);
 
@@ -856,7 +854,7 @@ namespace lime {
 
 		} else {
 
-			framePeriod = 1000.0;
+			framePeriod = 0.0;
 
 		}
 
