@@ -27,13 +27,15 @@ class NativeAudioSource
 	#end
 	private static var STREAM_TIMER_FREQUENCY = 100;
 
+	private static var hasALSoftLatencyExt:Null<Bool>;
+
 	private var buffers:Array<ALBuffer>;
 	private var bufferTimeBlocks:Array<Float>;
 	private var completed:Bool;
 	private var dataLength:Int;
 	private var format:Int;
 	private var handle:ALSource;
-	private var length:Null<Int>;
+	private var length:Null<Float>;
 	private var loops:Int;
 	private var parent:AudioSource;
 	private var playing:Bool;
@@ -79,6 +81,10 @@ class NativeAudioSource
 
 	public function init():Void
 	{
+		if (hasALSoftLatencyExt == null)
+		{
+			hasALSoftLatencyExt = AL.isExtensionPresent("AL_SOFT_source_latency");
+		}
 		dataLength = 0;
 		format = 0;
 
@@ -378,7 +384,7 @@ class NativeAudioSource
 		parent.onComplete.dispatch();
 	}
 
-	private function checkPlay(delta:Int):Void
+	private function checkPlay(delta:Float):Void
 	{
 		final finished:Bool = AL.getSourcei(handle, AL.SOURCE_STATE) != AL.PLAYING;
 
@@ -405,7 +411,7 @@ class NativeAudioSource
 	}
 
 	// Get & Set Methods
-	public function getCurrentTime():Int
+	public function getCurrentTime():Float
 	{
 		if (completed)
 		{
@@ -415,7 +421,7 @@ class NativeAudioSource
 		{
 			if (stream)
 			{
-				var time = (Std.int(bufferTimeBlocks[0] * 1000) + Std.int(AL.getSourcef(handle, AL.SEC_OFFSET) * 1000)) - parent.offset;
+				var time = ((bufferTimeBlocks[0] * 1000) + (AL.getSourcef(handle, AL.SEC_OFFSET) * 1000)) - parent.offset;
 				if (time < 0) return 0;
 				return time;
 			}
@@ -424,7 +430,7 @@ class NativeAudioSource
 				var offset = AL.getSourcei(handle, AL.BYTE_OFFSET);
 				var ratio = (offset / dataLength);
 				var totalSeconds = samples / parent.buffer.sampleRate;
-				var time = Std.int(totalSeconds * ratio * 1000) - parent.offset;
+				var time = (totalSeconds * ratio * 1000) - parent.offset;
 
 				if (time < 0) return 0;
 				return time;
@@ -434,7 +440,7 @@ class NativeAudioSource
 		return 0;
 	}
 
-	public function setCurrentTime(value:Int):Int
+	public function setCurrentTime(value:Float):Float
 	{
 		// `setCurrentTime()` has side effects and is never safe to skip.
 		/* if (value == getCurrentTime())
@@ -467,7 +473,7 @@ class NativeAudioSource
 				if (secondOffset > totalSeconds) secondOffset = totalSeconds;
 
 				var ratio = (secondOffset / totalSeconds);
-				var totalOffset = Std.int(dataLength * ratio);
+				var totalOffset = (dataLength * ratio);
 
 				AL.sourcei(handle, AL.BYTE_OFFSET, totalOffset);
 				if (playing) AL.sourcePlay(handle);
@@ -521,17 +527,17 @@ class NativeAudioSource
 		return value;
 	}
 
-	public function getLength():Int
+	public function getLength():Float
 	{
 		if (length != null)
 		{
 			return length;
 		}
 
-		return Std.int(samples / parent.buffer.sampleRate * 1000) - parent.offset;
+		return (samples / parent.buffer.sampleRate * 1000) - parent.offset;
 	}
 
-	public function setLength(value:Int):Int
+	public function setLength(value:Float):Float
 	{
 		if (playing && length != value)
 		{
@@ -613,6 +619,19 @@ class NativeAudioSource
 		}
 
 		return position;
+	}
+
+	public function getLatency():Float
+	{
+		if (hasALSoftLatencyExt)
+		{
+			var offsets = AL.getSourcedvSOFT(handle, AL.SEC_OFFSET_LATENCY_SOFT, 2);
+			if (offsets != null)
+			{
+				return offsets[1] * 1000;
+			}
+		}
+		return 0;
 	}
 
 	public function setPosition(value:Vector4):Vector4

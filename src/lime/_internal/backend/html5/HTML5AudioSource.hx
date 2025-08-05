@@ -2,6 +2,7 @@ package lime._internal.backend.html5;
 
 import lime.math.Vector4;
 import lime.media.AudioSource;
+import lime.media.AudioManager;
 
 @:access(lime.media.AudioBuffer)
 class HTML5AudioSource
@@ -114,7 +115,7 @@ class HTML5AudioSource
 	}
 
 	// Get & Set Methods
-	public function getCurrentTime():Int
+	public function getCurrentTime():Float
 	{
 		if (id == -1)
 		{
@@ -128,7 +129,7 @@ class HTML5AudioSource
 		}
 		else if (parent.buffer != null && parent.buffer.__srcHowl != null)
 		{
-			var time = Std.int(parent.buffer.__srcHowl.seek(id) * 1000) - parent.offset;
+			var time = (parent.buffer.__srcHowl.seek(id) * 1000) - parent.offset;
 			if (time < 0) return 0;
 			return time;
 		}
@@ -137,7 +138,19 @@ class HTML5AudioSource
 		return 0;
 	}
 
-	public function setCurrentTime(value:Int):Int
+	public function getLatency():Float
+	{
+		var ctx = AudioManager.context.web;
+		if (ctx != null)
+		{
+			var baseLatency:Float = untyped ctx.baseLatency != null ? untyped ctx.baseLatency : 0;
+			var outputLatency:Float = untyped ctx.outputLatency != null ? untyped ctx.outputLatency : 0;
+			return (baseLatency + outputLatency) * 1000;
+		}
+		return 0;
+	}
+
+	public function setCurrentTime(value:Float):Float
 	{
 		#if lime_howlerjs
 		if (parent.buffer != null && parent.buffer.__srcHowl != null)
@@ -172,7 +185,7 @@ class HTML5AudioSource
 		return gain = value;
 	}
 
-	public function getLength():Int
+	public function getLength():Float
 	{
 		if (length != 0)
 		{
@@ -182,14 +195,14 @@ class HTML5AudioSource
 		#if lime_howlerjs
 		if (parent.buffer != null && parent.buffer.__srcHowl != null)
 		{
-			return Std.int(parent.buffer.__srcHowl.duration() * 1000);
+			return (parent.buffer.__srcHowl.duration() * 1000);
 		}
 		#end
 
 		return 0;
 	}
 
-	public function setLength(value:Int):Int
+	public function setLength(value:Float):Float
 	{
 		return length = value;
 	}

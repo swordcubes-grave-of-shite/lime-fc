@@ -33,7 +33,7 @@ class AudioSource
 	/**
 		The current playback position of the audio, in milliseconds.
 	**/
-	public var currentTime(get, set):Int;
+	public var currentTime(get, set):Float;
 
 	/**
 		The gain (volume) of the audio. A value of `1.0` represents the default volume.
@@ -43,7 +43,7 @@ class AudioSource
 	/**
 		The length of the audio, in milliseconds.
 	**/
-	public var length(get, set):Int;
+	public var length(get, set):Float;
 
 	/**
 		The number of times the audio will loop. A value of `0` means the audio will not loop.
@@ -58,12 +58,19 @@ class AudioSource
 	/**
 		The offset within the audio buffer to start playback, in samples.
 	**/
-	public var offset:Int;
+	public var offset:Float;
 
 	/**
 		The 3D position of the audio source, represented as a `Vector4`.
 	**/
 	public var position(get, set):Vector4;
+
+	/**
+		The estimated output latency, in miliseconds, for this `AudioSource`. If not possible to retrieve will return `0`.
+
+		NOTE: This will return `0` if the source is not playing!
+	**/
+	public var latency(get, never):Float;
 
 	@:noCompletion private var __backend:AudioSourceBackend;
 
@@ -74,7 +81,7 @@ class AudioSource
 		@param length The length of the audio to play, in milliseconds. If `null`, the full buffer is used.
 		@param loops The number of times to loop the audio. `0` means no looping.
 	**/
-	public function new(buffer:AudioBuffer = null, offset:Int = 0, length:Null<Int> = null, loops:Int = 0)
+	public function new(buffer:AudioBuffer = null, offset:Float = 0, length:Null<Float> = null, loops:Int = 0)
 	{
 		this.buffer = buffer;
 		this.offset = offset;
@@ -132,12 +139,12 @@ class AudioSource
 	}
 
 	// Get & Set Methods
-	@:noCompletion private function get_currentTime():Int
+	@:noCompletion private function get_currentTime():Float
 	{
 		return __backend.getCurrentTime();
 	}
 
-	@:noCompletion private function set_currentTime(value:Int):Int
+	@:noCompletion private function set_currentTime(value:Float):Float
 	{
 		return __backend.setCurrentTime(value);
 	}
@@ -152,12 +159,12 @@ class AudioSource
 		return __backend.setGain(value);
 	}
 
-	@:noCompletion private function get_length():Int
+	@:noCompletion private function get_length():Float
 	{
 		return __backend.getLength();
 	}
 
-	@:noCompletion private function set_length(value:Int):Int
+	@:noCompletion private function set_length(value:Float):Float
 	{
 		return __backend.setLength(value);
 	}
@@ -190,6 +197,11 @@ class AudioSource
 	@:noCompletion private function set_position(value:Vector4):Vector4
 	{
 		return __backend.setPosition(value);
+	}
+
+	@:noCompletion private function get_latency():Float
+	{
+		return __backend.getLatency();
 	}
 }
 
