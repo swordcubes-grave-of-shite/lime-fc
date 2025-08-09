@@ -38,9 +38,9 @@ class AudioManager
 				#if !lime_doc_gen
 				if (context.type == OPENAL)
 				{
-					#if (windows || mac || linux || android)
-					setupConfig();
-					#end
+					// #if (windows || mac || linux || android)
+					// setupConfig();
+					// #end
 
 					var alc = context.openal;
 					var device = alc.openDevice();
@@ -156,6 +156,7 @@ class AudioManager
 		try
 		{
 			final directory:String = Path.directory(Path.withoutExtension(System.applicationStorageDirectory));
+			trace(directory);
 			final path:String = Path.join([directory, #if windows 'audio-config.ini' #else 'audio-config.conf' #end]);
 			final content:String = alConfig.join('\n');
 

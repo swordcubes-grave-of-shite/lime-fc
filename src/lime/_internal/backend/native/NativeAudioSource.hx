@@ -40,7 +40,7 @@ class NativeAudioSource
 	private var parent:AudioSource;
 	private var playing:Bool;
 	private var position:Vector4;
-	private var samples:Int;
+	private var samples:Float;
 	private var stream:Bool;
 	private var streamTimer:Timer;
 	private var timer:Timer;
@@ -151,7 +151,9 @@ class NativeAudioSource
 			}
 		}
 
-		samples = Std.int((dataLength * 8.0) / (parent.buffer.channels * parent.buffer.bitsPerSample));
+		final dlb:Float = cast(dataLength * 8.0);
+		final sr:Float = cast(parent.buffer.channels * parent.buffer.bitsPerSample);
+		samples = dlb / sr;
 
 		if (Application.current != null && !stream)
 		{
