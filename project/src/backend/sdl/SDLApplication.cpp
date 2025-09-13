@@ -2,6 +2,8 @@
 #include "SDLGamepad.h"
 #include "SDLJoystick.h"
 #include <system/System.h>
+#include <thread>
+#include <cmath>
 
 #ifdef HX_MACOS
 #include <CoreFoundation/CoreFoundation.h>
@@ -32,6 +34,8 @@ namespace lime {
 	SDL_Sensor* accelerometerSensor = nullptr;
 	#endif
 
+	double performanceFrequency = 0.0;
+	double performanceCounter = 0.0;
 
 	SDLApplication::SDLApplication () {
 
@@ -46,6 +50,8 @@ namespace lime {
 			printf ("Could not initialize SDL: %s.\n", SDL_GetError ());
 
 		}
+		performanceFrequency = (double)SDL_GetPerformanceFrequency();
+		performanceCounter = (double)SDL_GetPerformanceCounter();
 
 		SDL_LogSetPriority (SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_WARN);
 
@@ -164,6 +170,32 @@ namespace lime {
 
 	}
 
+	double getTime() {
+		const double counter = (double)SDL_GetPerformanceCounter() - performanceCounter;
+		return (counter / performanceFrequency) * 1000.0;
+
+	}
+	void busyWait(double ms) {
+		const double start = getTime();
+		while (getTime() - start < ms) {
+			std::this_thread::yield();
+		}
+	}
+
+	void coolSleep(double sleepFor) {
+		double dt = 0.0;
+		double start = getTime();
+		double threshold = sleepFor - (0.9765625 * 2.2);
+
+		while ((dt = getTime() - start) < threshold)
+			SDL_Delay(1);
+		
+		double end = getTime();
+		
+		double remainder = (end - start) - dt;
+		if (remainder > 0)
+			busyWait(remainder);
+	}
 
 	void SDLApplication::HandleEvent (SDL_Event* event) {
 
@@ -179,21 +211,22 @@ namespace lime {
 			case SDL_USEREVENT:
 
 				if (!inBackground) {
-
-					currentUpdate = SDL_GetTicks ();
 					applicationEvent.type = UPDATE;
 					applicationEvent.deltaTime = currentUpdate - lastUpdate;
-					lastUpdate = currentUpdate;
+					
+					double start = getTime();
 
-					nextUpdate += framePeriod;
-
-					if (framePeriod > 0.0) {
-						while (nextUpdate <= currentUpdate)
-							nextUpdate += framePeriod;
-					}
 					ApplicationEvent::Dispatch (&applicationEvent);
 					RenderEvent::Dispatch (&renderEvent);
 
+					double end = getTime();
+					double remainder = end - start;
+
+					if (framePeriod > 0.0) {
+						double sleepDuration = framePeriod - remainder;
+						if (sleepDuration > 0)
+							coolSleep(sleepDuration);
+					}
 				}
 
 				break;
@@ -375,8 +408,10 @@ namespace lime {
 	void SDLApplication::Init () {
 
 		active = true;
-		lastUpdate = SDL_GetTicks ();
-		nextUpdate = lastUpdate;
+
+		double ticks = (double)SDL_GetPerformanceCounter();
+		lastUpdate = ticks;
+		nextUpdate = ticks;
 
 	}
 
@@ -859,13 +894,9 @@ namespace lime {
 		}
 
 	}
+	
 
-
-	static SDL_TimerID timerID = 0;
-	bool timerActive = false;
-	bool firstTime = true;
-
-	Uint32 OnTimer (Uint32 interval, void *) {
+	void PushUpdate(void) {
 
 		SDL_Event event;
 		SDL_UserEvent userevent;
@@ -876,75 +907,37 @@ namespace lime {
 		event.type = SDL_USEREVENT;
 		event.user = userevent;
 
-		timerActive = false;
-		timerID = 0;
-
 		SDL_PushEvent (&event);
-
-		return 0;
 
 	}
 
 
 	bool SDLApplication::Update () {
+		// i have no idea why this makes fps
+		// more consistent, but i am happy regardless.
+		lastUpdate = currentUpdate;
+		currentUpdate = getTime();
 
+		double dt = currentUpdate - lastUpdate;
+
+		double dtLimit = framePeriod * 4;
+		if (dt > dtLimit)
+			dt = dtLimit;
+		
+		nextUpdate += dt;
+
+		if(nextUpdate >= framePeriod) {
+			PushUpdate();
+			nextUpdate -= framePeriod;
+		}
 		SDL_Event event;
-		event.type = -1;
-
-		#if (!defined (IPHONE) && !defined (EMSCRIPTEN))
-
-		if (active && (firstTime || WaitEvent (&event))) {
-
-			firstTime = false;
-
+		while (SDL_PollEvent (&event)) {
 			HandleEvent (&event);
 			event.type = -1;
 			if (!active)
 				return active;
-
-		#endif
-
-			while (SDL_PollEvent (&event)) {
-
-				HandleEvent (&event);
-				event.type = -1;
-				if (!active)
-					return active;
-
-			}
-
-			currentUpdate = SDL_GetTicks ();
-
-		#if defined (IPHONE) || defined (EMSCRIPTEN)
-
-			if (currentUpdate >= nextUpdate) {
-
-				event.type = SDL_USEREVENT;
-				HandleEvent (&event);
-				event.type = -1;
-
-			}
-
-		#else
-
-			if (currentUpdate >= nextUpdate) {
-
-				if (timerActive) SDL_RemoveTimer (timerID);
-				OnTimer (0, 0);
-
-			} else if (!timerActive) {
-
-				timerActive = true;
-				timerID = SDL_AddTimer (nextUpdate - currentUpdate, OnTimer, 0);
-
-			}
-
 		}
-
-		#endif
-
 		return active;
-
 	}
 
 
