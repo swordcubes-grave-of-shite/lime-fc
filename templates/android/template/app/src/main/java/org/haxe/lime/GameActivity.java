@@ -1,15 +1,19 @@
 package org.haxe.lime;
 
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.os.VibratorManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.KeyCharacterMap;
@@ -106,19 +110,31 @@ public class GameActivity extends SDLActivity {
 	}
 
 
+	@SuppressWarnings("deprecation")
 	protected void onCreate (Bundle state) {
-
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-
-			getWindow ().addFlags (WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-
-		}
 
 		super.onCreate (state);
 
 		assetManager = getAssets ();
-		vibrator = (Vibrator)mSingleton.getSystemService (Context.VIBRATOR_SERVICE);
-		handler = new Handler ();
+
+		if (checkSelfPermission(Manifest.permission.VIBRATE) == PackageManager.PERMISSION_GRANTED) {
+
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+
+				VibratorManager vibratorManager = (VibratorManager)mSingleton.getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
+
+				if (vibratorManager != null)
+					vibrator = vibratorManager.getDefaultVibrator();
+
+			} else {
+
+				vibrator = (Vibrator)mSingleton.getSystemService(Context.VIBRATOR_SERVICE);
+
+			}
+
+		}
+
+		handler = new Handler (Looper.getMainLooper ());
 
 		Extension.assetManager = assetManager;
 		Extension.callbackHandler = handler;
@@ -318,56 +334,6 @@ public class GameActivity extends SDLActivity {
 	::end::
 
 
-	public static void openFile (String path) {
-
-		try {
-
-			String extension = path;
-			int index = path.lastIndexOf ('.');
-
-			if (index > 0) {
-
-				extension = path.substring (index + 1);
-
-			}
-
-			String mimeType = MimeTypeMap.getSingleton ().getMimeTypeFromExtension (extension);
-			File file = new File (path);
-
-			Intent intent = new Intent ();
-			intent.setAction (Intent.ACTION_VIEW);
-			intent.setDataAndType (Uri.fromFile (file), mimeType);
-
-			Extension.mainActivity.startActivity (intent);
-
-		} catch (Exception e) {
-
-			Log.e ("GameActivity", e.toString ());
-			return;
-
-		}
-
-	}
-
-
-	public static void openURL (String url, String target) {
-
-		Intent browserIntent = new Intent (Intent.ACTION_VIEW).setData (Uri.parse (url));
-
-		try {
-
-			Extension.mainActivity.startActivity (browserIntent);
-
-		} catch (Exception e) {
-
-			Log.e ("GameActivity", e.toString ());
-			return;
-
-		}
-
-	}
-
-
 	public static void postUICallback (final long handle) {
 
 		Extension.callbackHandler.post (new Runnable () {
@@ -383,6 +349,7 @@ public class GameActivity extends SDLActivity {
 	}
 
 
+	@SuppressWarnings("deprecation")
 	public static void vibrate (int period, int duration, int amplitude) {
 
 		if (vibrator == null || !vibrator.hasVibrator () || period < 0 || duration <= 0 || amplitude < 0) {

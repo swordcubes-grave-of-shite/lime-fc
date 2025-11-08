@@ -613,6 +613,7 @@ namespace lime {
 
 	}
 
+
 	int System::GetDisplayOrientation(int displayIndex) {
 		int orientation = 0;
 		switch(SDL_GetDisplayOrientation(displayIndex)) {
@@ -635,6 +636,42 @@ namespace lime {
 
 		return orientation;
 	}
+
+	std::wstring* System::GetHint (const char* key) {
+		std::string hintKey(key);
+
+    if (hintKey.rfind("SDL_", 0) != 0) {
+			hintKey = "SDL_" + hintKey;
+    }
+
+    SDL_GetHint(hintKey.c_str());
+
+		const char* raw = SDL_GetHint(hintKey.c_str());
+		if (!raw) {
+			return nullptr;
+		}
+
+		std::string hint = std::string (raw);
+		std::wstring* _hint = new std::wstring (hint.begin (), hint.end ());
+		return _hint;
+	}
+
+
+
+	#if !defined(IPHONE)
+	void System::OpenFile (const char* path) {
+
+		OpenURL (path, NULL);
+
+	}
+
+
+	void System::OpenURL (const char* url, const char* target) {
+
+		SDL_OpenURL (url);
+
+	}
+	#endif
 
 
 	FILE* FILE_HANDLE::getFile () {

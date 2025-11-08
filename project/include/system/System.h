@@ -44,6 +44,9 @@ namespace lime {
 			static int GetFirstGyroscopeSensorId ();
 			static int GetFirstAccelerometerSensorId ();
 			#endif
+			#if defined (IPHONE)
+			static void showIOSAlert (const char* message, const char* title);
+			#endif
 			static int GetNumDisplays ();
 			static std::wstring* GetPlatformLabel ();
 			static std::wstring* GetPlatformName ();
@@ -56,6 +59,7 @@ namespace lime {
 			static void OpenURL (const char* url, const char* target);
 			static bool SetAllowScreenTimeout (bool allow);
 			static int GetDisplayOrientation (int displayIndex);
+			static std::wstring* GetHint (const char* key);
 			#if defined(HX_WINDOWS) && !defined (HX_WINRT)
 			static bool SetWindowsConsoleMode (int handleType, int mode);
 			#endif
