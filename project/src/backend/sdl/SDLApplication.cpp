@@ -180,9 +180,9 @@ namespace lime {
 
 		while ((dt = getTime() - start) < threshold)
 			SDL_Delay(1);
-		
+
 		double end = getTime();
-		
+
 		double remainder = (end - start) - dt;
 		if (remainder > 0)
 			busyWait(remainder);
@@ -854,7 +854,7 @@ namespace lime {
 		}
 
 	}
-	
+
 
 	void PushUpdate(void) {
 
@@ -892,17 +892,16 @@ namespace lime {
 
 		if (dt > dtLimit)
 			dt = dtLimit;
-		
+
 		nextUpdate += dt;
-		if(nextUpdate >= framePeriod - remainder) {
-			PushUpdate();
-			nextUpdate = 0;
-		} else {
-			// let the cpu have a bit of rest
-			double sleepDuration = (framePeriod * 0.5) - remainder;
-			if(sleepDuration > 0)
-				coolSleep(sleepDuration);
-		}
+        if (nextUpdate >= framePeriod) {
+            PushUpdate();
+            nextUpdate -= framePeriod;
+        }
+        double sleepDuration = framePeriod - nextUpdate;
+        if (sleepDuration > 2.0) {
+            SDL_Delay((Uint32)(sleepDuration - 1.0));
+        }
 		return active;
 	}
 
