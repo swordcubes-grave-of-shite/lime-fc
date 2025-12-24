@@ -893,14 +893,23 @@ namespace lime {
         if (dt > dtLimit)
             dt = dtLimit;
 
-        nextUpdate += dt;
-        if (nextUpdate >= framePeriod) {
+        if(framePeriod <= 0) {
+            // we're uncapped, just go as fast as possible!
+            nextUpdate = 0;
             PushUpdate();
-            nextUpdate -= framePeriod;
-        }
-        double sleepDuration = framePeriod - nextUpdate;
-        if (sleepDuration > 2.0) {
-            SDL_Delay((Uint32)(sleepDuration - 1.0));
+        } else {
+            // we're capped, try to cap to max framerate
+            nextUpdate += dt;
+            while(nextUpdate >= framePeriod) {
+                PushUpdate();
+                nextUpdate -= framePeriod;
+            }
+            if(nextUpdate < 0) nextUpdate = 0;
+
+            double sleepDuration = framePeriod - nextUpdate;
+            if (sleepDuration > 2.0) {
+                SDL_Delay((Uint32)(sleepDuration - 1.0));
+            }
         }
         return active;
     }
