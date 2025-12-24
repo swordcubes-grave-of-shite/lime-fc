@@ -128,7 +128,7 @@ class Vector2
 		}
 	}
 
-	/**Vector2
+	/**
 		Offsets the current value of this vector
 		@param	dx	An offset x value
 		@param	dy	An offset y value
