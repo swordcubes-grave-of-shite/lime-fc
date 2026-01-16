@@ -369,9 +369,8 @@ namespace lime {
 
         active = true;
 
-        double ticks = (double)SDL_GetPerformanceCounter();
-        lastUpdate = ticks;
-        nextUpdate = ticks;
+        lastUpdate = 0;
+        nextUpdate = 0;
 
     }
 
