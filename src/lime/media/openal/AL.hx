@@ -234,12 +234,13 @@ class AL
 	public static inline var FILTER_BANDPASS:Int = 0x0003;
 	/* AL_SOFT_source_latency extension */
 	public static inline var SAMPLE_OFFSET_LATENCY_SOFT = 0x1200;
-	public static inline var SEC_OFFSET_LATENCY_SOFT = 0x1201;
+	public static inline var STOP_SOURCES_ON_DISCONNECT_SOFT:Int = 0x19AB;
 
 	public static inline var DEVICE_CLOCK_SOFT:Int = 0x1600;
 	public static inline var DEVICE_LATENCY_SOFT:Int = 0x1601;
 	public static inline var DEVICE_CLOCK_LATENCY_SOFT:Int = 0x1602;
 
+	public static inline var SEC_OFFSET_LATENCY_SOFT:Int = 0x1201;
 	public static inline var SEC_OFFSET_CLOCK_SOFT:Int = 0x1203;
 
 	public static function removeDirectFilter(source:ALSource)
