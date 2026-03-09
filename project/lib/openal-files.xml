@@ -182,6 +182,8 @@
             <compilerflag value="-Dstrcasecmp=_stricmp" />
             <compilerflag value="-Dstrncasecmp=_strnicmp" />
 			<compilerflag value="/utf-8" />
+	    <compilerflag value="/std:c++17" />
+
 
         </section>
 
